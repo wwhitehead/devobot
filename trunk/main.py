@@ -6,6 +6,9 @@ from command import Command
 def command(msg, sim):
 	"""check instant message for valid command and execute"""
 	
+	if str(msg.Dialog) not in ("MessageFromAgent", "MessageFromObject"):
+		return
+	
 	char = "~"
 	if msg.Message.startswith(char):
 		command = msg.Message.lstrip(char).split(" ", 1)[0]
@@ -39,6 +42,5 @@ def teleport(msg, sim):
 
 # start
 client = bot.login(config.login)
+client.Self.OnInstantMessage += client.Self.InstantMessageCallback(command)
 bot.events.OnRequestTeleport = teleport
-bot.events.OnMessageFromAgent = command
-bot.events.OnMessageFromObject = command
