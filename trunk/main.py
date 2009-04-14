@@ -15,7 +15,7 @@ def command(msg, sim):
 		try:
 			reload(commands)
 		except Exception, e:
-			bot.say(client, "command reload error: %s" % e)
+			print "command reload error: %s" % e
 		else:
 			# check the command exists
 			if command in dir(commands):
@@ -27,7 +27,7 @@ def command(msg, sim):
 			try:
 				command(client, msg)
 			except Exception, e:
-				bot.say(client, "command execute error: %s" % e)
+				print "command execute error: %s" % e
 
 
 def teleport(msg, sim):

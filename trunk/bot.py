@@ -109,23 +109,3 @@ class _Wait:
 		return setter
 			
 wait = _Wait()
-
-
-#	added = []
-#	for name in dir(client):
-#		obj = getattr(client, name)
-#		try:
-#			for member in dir(obj):
-#				try:
-#					if "event" in str(type(getattr(obj, member))):
-#						event = "%s.%s" % (name, member)
-#						if event not in added:
-#							exec("client.%s += client.%sCallback(events.handler(\"%s\"))" % 
-#								(event, event.replace(".On", ".", 1), event.split(".", 1)[1]))
-#							added.append(event)
-#							print "added %s" % event
-#				except Exception:
-#					pass
-#		except Exception:
-#			pass
-#	print "done"
