@@ -1,5 +1,5 @@
 
-
+import bot
 from command import Command
 
 
