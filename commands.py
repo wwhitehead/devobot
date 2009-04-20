@@ -1,18 +1,21 @@
 
 import bot
-from command import Command
 
 
-@Command()
-def quit(client, msg):
-	"""logout"""
-	
-	client.Network.Logout()
-	
+@bot.Command(public=True)
+def default(client, msg)
+	"""default handler for instant messages"""
 
-@Command(public=True)
+	print "%s: %s" % (msg.FromAgentName, msg.Message)
+
+@bot.Command(public=True)
 def tp(client, msg):
 	"""send the user a teleport request"""
 	
 	client.Self.SendTeleportLure(msg.FromAgentID)
 
+@bot.Command()
+def quit(client, msg):
+	"""logout"""
+	
+	client.Network.Logout()
