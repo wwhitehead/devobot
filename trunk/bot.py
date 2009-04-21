@@ -4,8 +4,9 @@ clr.AddReferenceToFile("OpenMetaverse.dll")
 clr.AddReferenceToFile("OpenMetaverseTypes.dll")
 from OpenMetaverse import *
 from System.IO import FileSystemWatcher, Directory
+from System.Threading import Thread
+from System import DateTime
 import config, commands, events as handlers
-from time import time, sleep
 
 
 # list of client objects - stored for access in _bind_all
@@ -19,9 +20,7 @@ def _bind_all():
 	"""
 	
 	# reload relevant modules
-	reload(handlers)
-	reload(config)
-	reload(commands)
+	map(reload, (handlers, config, command))
 	
 	for client in clients:
 
@@ -35,8 +34,8 @@ def _bind_all():
 			if name in dir(handlers) and name not in ("OnInstantMessage", 
 				"OnMessageFromAgent", "OnMessageFromObject"):
 				if not hasattr(events, name):
-					exec("client.%s += client.%sCallback(events.handler(client, \"%s\"))" % 
-						(event, event.replace(".On", ".", 1), name))
+					exec("client.%s += client.%sCallback(events.handler(client," +
+						"\"%s\"))" % (event, event.replace(".On", ".", 1), name))
 				setattr(events, name) = getattr(handlers, name)
 	
 
@@ -47,10 +46,9 @@ def _command(msg, sim):
 	if msg.Message.startswith(char):
 		command = msg.Message.lstrip(char).split(" ", 1)[0]
 		
-		# reload commands, settings and event handlers every time a command is called
-		# this disregards performance for the sake of rapid development
+		# bind all every time a command is called
 		try:
-			bind_all()
+			_bind_all()
 		except Exception, e:
 			print "bot.bind_all error: %s" % e
 		else:
@@ -83,7 +81,7 @@ def login(credentials, sim=None, timeout=30):
 	client.Self.OnInstantMessage += (client.Self.InstantMessageCallback(
 		lambda msg, sim: events.handler("On%s" % msg.Dialog)(msg, sim)))
 			
-	# add to clients list and set up events, commands and settings
+	# add to clients list and bind all
 	_clients.append(client)
 	_bind_all()
 
@@ -93,12 +91,12 @@ def login(credentials, sim=None, timeout=30):
 		args.insert(len(args) - 1, NetworkManager.StartLocation(*sim))
 	
 	# attempt login until success or timeout reached
-	start = time()
-	while time() - start < timeout:
+	start = DateTime.Now
+	while (DateTime.Now - start).Seconds < timeout:
 		if client.Network.Login(*args):
 			appearance()
 			break
-		sleep(.01)
+		Thread.Sleep(.01)
 
 	return client
 
@@ -155,11 +153,11 @@ class _Events:
 	def wait(self, name, timeout=10):
 		"""sleep until the event is set or the timeout is reached"""
 		
-		start = time()
+		start = DateTime.Now
 		while not self.__dict__.get(name, False):
-			if time() - start > timeout:
+			if (DateTime.Now - start).Seconds > timeout
 				return False
-			sleep(.01)
+			Thread.Sleep(.01)
 		del self.__dict__[name]
 		return True
 		
