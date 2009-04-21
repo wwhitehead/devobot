@@ -3,7 +3,7 @@ import bot
 
 
 @bot.Command(public=True)
-def default(client, msg)
+def default(client, msg):
 	"""default handler for instant messages"""
 
 	print "%s: %s" % (msg.FromAgentName, msg.Message)
