@@ -3,7 +3,6 @@ import clr
 clr.AddReferenceToFile("OpenMetaverse.dll")
 clr.AddReferenceToFile("OpenMetaverseTypes.dll")
 from OpenMetaverse import *
-from System.Threading import Thread, ThreadStart
 from System.IO import FileSystemWatcher, Directory
 import config, commands, events as handlers
 from time import time, sleep
