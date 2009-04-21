@@ -20,9 +20,9 @@ def _bind_all():
 	"""
 	
 	# reload relevant modules
-	map(reload, (handlers, config, command))
+	map(reload, (handlers, config, commands))
 	
-	for client in clients:
+	for client in _clients:
 
 		# bind settings
 		for setting in config.settings.items():
@@ -36,7 +36,7 @@ def _bind_all():
 				if not hasattr(events, name):
 					exec("client.%s += client.%sCallback(events.handler(client," +
 						"\"%s\"))" % (event, event.replace(".On", ".", 1), name))
-				setattr(events, name) = getattr(handlers, name)
+				exec("client.%s = handlers.%s" % (name, name))
 	
 
 def _command(msg, sim):
@@ -155,7 +155,7 @@ class _Events:
 		
 		start = DateTime.Now
 		while not self.__dict__.get(name, False):
-			if (DateTime.Now - start).Seconds > timeout
+			if (DateTime.Now - start).Seconds > timeout:
 				return False
 			Thread.Sleep(.01)
 		del self.__dict__[name]
@@ -176,13 +176,13 @@ events.OnMessageFromAgent = _command
 events.OnMessageFromObject = _command
 
 # set up directoy watcher to automatically reload via bind_all
-def _watcher_bind_all(source, event)
+def _watcher_bind_all(source, event):
 	if event.FullPath.lower.endswith(".py"):
 		_bind_all()
 
 _watcher = FileSystemWatcher()
 _watcher.Path = Directory.GetCurrentDirectory()
-_watcher.Changed += _bind_all
+_watcher.Changed += _watcher_bind_all
 _watcher.EnableRaisingEvents = True
 
 
