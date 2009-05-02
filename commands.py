@@ -6,12 +6,12 @@ import bot
 def default(client, msg):
 	"""default handler for instant messages"""
 
-	print "%s: %s" % (msg.FromAgentName, msg.Message)
+	print "[%s/im] %s: %s" % (client.Self.Name, msg.FromAgentName, msg.Message)
 
 @bot.Command(public=True)
 def tp(client, msg):
 	"""send the user a teleport request"""
-	
+
 	client.Self.SendTeleportLure(msg.FromAgentID)
 
 @bot.Command()
