@@ -1,6 +1,6 @@
 
-# owner's account name for private commands
-owner = "Meat Carver"
+# owner's UUID for private commands
+owner = "72bbc515-44b5-4ca5-bff8-ded1b3d65e40"
 
 # list of bot account logins
 logins = (
@@ -9,7 +9,7 @@ logins = (
 )
 
 # bot address (bot name, email address)
-addr = ("DevoBot", "stephen.mc@gmail.com")
+addr = ("DevoBot", "meat.carver@gmail.com")
 
 # libomv client settings
 settings = {
