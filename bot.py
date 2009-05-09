@@ -61,12 +61,13 @@ def _reload():
 							event = "%s.%s" % (name, member)
 							if event not in _sl_events:
 								_sl_events.append(event)
-					except Exception:
+					except:
 						pass
-			except Exception:
+			except:
 				pass
 	
 	# bind settings and sl event handlers
+	handlers.OnChat = None
 	for client, bound in _client_bound_events.items():
 		for setting in config.settings.items():
 			exec("client.%s = %s" % setting)
@@ -78,9 +79,12 @@ def _reload():
 				exec("client.%s += client.%sCallback(handler)" % 
 					(event, event.replace(".On", ".", 1)))
 
-	# bind the python event handlers
+	# set the relevant event handlers for commands
 	handlers.OnMessageFromAgent = _command
 	handlers.OnMessageFromObject = _command
+	handlers.OnChat = _chat_command
+
+	# bind the python event handlers
 	for name in dir(handlers):
 		handler = getattr(handlers, name)
 		if isinstance(handler, handlers.bot.Event):
@@ -88,13 +92,32 @@ def _reload():
 
 
 @handlers.bot.Event()
+def _chat_command(client, msg, audible, type, source, name, id, owner, pos):
+	"""
+	create an InstantMesage-like object from chat events and 
+	pass it to the im handler
+	"""
+	
+	class MessageWrapper:
+		def __init__(self, **kwargs):
+			self.__dict__.update(kwargs)
+
+	if str(source) != "System" and "Typing" not in str(type):
+		dialog = getattr(InstantMessageDialog, "MessageFrom%s" % source)
+		msg = MessageWrapper(Message=msg, FromAgentName=name, FromAgentID=owner, 
+			Position=pos, Dialog=dialog)
+		_command(client, msg, client.Network.CurrentSim)
+	
+	
+@handlers.bot.Event()
 def _command(client, msg, sim):
 	"""check instant message for valid command and execute"""
 	
 	command = getattr(commands, msg.Message.lstrip("~").split(" ", 1)[0], 
 		getattr(commands, "default", None))
-	if isinstance(command, commands.bot.Command) and (command.public or
-		msg.FromAgentName == config.owner):
+	if (isinstance(command, commands.bot.Command) and 
+		msg.FromAgentID != client.Self.AgentID and 
+		(str(msg.FromAgentID) == config.owner or command.public)):
 		try:
 			command(client, msg)
 		except Exception, e:
@@ -187,12 +210,15 @@ events = _Events()
 
 # set up directoy watcher to automatically reload
 def _watcher_reload(source, event):
-	if event.FullPath.lower().endswith(".py"):
+	
+	if event.Name in ("commands.py", "config.py", "events.py"):
 		try:
 			_reload()
 		except IOException:
 			# file can still be held by write process and reload fails - retry
 			_watcher_reload(source, event)
+		except Exception, e:
+			print "reload error: %s" % e
 
 _watcher = FileSystemWatcher()
 _watcher.Path = Directory.GetCurrentDirectory()
