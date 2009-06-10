@@ -1,4 +1,5 @@
 
+
 class Command:
 	"""
 	decorator for text command functions to flag them as commands 
@@ -19,6 +20,7 @@ class Command:
 		else:
 			return self._command(*args)
 
+
 class Event(Command): pass
 	
 	
@@ -31,6 +33,9 @@ from System.Threading import Thread
 from System import DateTime
 import config, commands, events as handlers
 
+
+# owner's uuid
+owner_id = None
 
 # dict of client objects / bound event names stored for access in _reload
 _client_bound_events = {}
@@ -57,7 +62,7 @@ def _reload():
 			try:
 				for member in dir(obj):
 					try:
-						if "event" in str(type(getattr(obj, member))):
+						if "event" in str(type(getattr(obj, member))).lower():
 							event = "%s.%s" % (name, member)
 							if event not in _sl_events:
 								_sl_events.append(event)
@@ -113,13 +118,13 @@ def _chat_command(client, msg, audible, type, source, name, id, owner, pos):
 def _command(client, msg, sim):
 	"""check instant message for valid command and execute"""
 	
-	command = getattr(commands, msg.Message.lstrip("~").split(" ", 1)[0], 
-		getattr(commands, "default", None))
+	command, args = ("%s " % msg.Message).lstrip("~").split(" ", 1)
+	command = getattr(commands, command, getattr(commands, "default", None))
 	if (isinstance(command, commands.bot.Command) and 
 		msg.FromAgentID != client.Self.AgentID and 
-		(str(msg.FromAgentID) == config.owner or command.public)):
+		(msg.FromAgentID == owner_id or command.public)):
 		try:
-			command(client, msg)
+			command(client, msg, args.rstrip(" "))
 		except Exception, e:
 			print "command execute error: %s" % e
 
@@ -137,9 +142,8 @@ def login(credentials, sim=None, timeout=30):
 	client.Self.OnInstantMessage += client.Self.InstantMessageCallback(
 		lambda msg, sim: events.handler(client, "On%s" % msg.Dialog)(msg, sim))
 			
-	# add to client dict and bind all
+	# add to client dict
 	_client_bound_events[client] = ["OnInstantMessage"]
-	_reload()
 
 	# build the login variables
 	args = list(credentials) + list(config.addr)
@@ -150,11 +154,34 @@ def login(credentials, sim=None, timeout=30):
 	start = DateTime.Now
 	while (DateTime.Now - start).Seconds < timeout:
 		if client.Network.Login(*args):
+			
+			# find owner name and bind all
+			@handlers.bot.Event()
+			def owner_found(client, query, results):
+				global owner_id
+				for result in results:
+					if "%s %s" % (result.FirstName, result.LastName) == config.owner:
+						owner_id = UUID(result.AgentID)
+						events.owner_found()
+			handlers.OnDirPeopleReply = owner_found
+			_reload()
+			client.Directory.StartPeopleSearch(
+				client.Directory.DirFindFlags.People, config.owner, 0)
+			events.wait("owner_found", 30)
+			handlers.OnDirPeopleReply = None
 			break
-		Thread.Sleep(.01)
+
+		events.sleep(.01)
 
 	return client
 
+
+def logout(client):
+	"""remove client from global objects dict on logout"""
+	
+	client.Network.Logout()
+	del _client_bound_events[client]
+	
 
 def say(client, msg):
 	"""shortcut for sending messages out to chat"""
@@ -191,9 +218,14 @@ class _Events:
 		while not self.__dict__.get(name, False):
 			if (DateTime.Now - start).Seconds > timeout:
 				return False
-			Thread.Sleep(.01)
+			Thread.CurrentThread.Join(.01)
 		del self.__dict__[name]
 		return True
+		
+	def sleep(self, time):
+		"""wait for a non-existant event to timeout"""
+		
+		return self.wait(None, timeout=time)
 		
 	def __getattr__(self, name):
 		"""return a function that will set the event as completed"""
@@ -212,13 +244,21 @@ events = _Events()
 def _watcher_reload(source, event):
 	
 	if event.Name in ("commands.py", "config.py", "events.py"):
+		error = None
 		try:
 			_reload()
 		except IOException:
 			# file can still be held by write process and reload fails - retry
 			_watcher_reload(source, event)
+		except SyntaxError, e:
+			if "The process cannot access the file" in str(e):
+				_watcher_reload(source, event)
+			else:
+				error = e
 		except Exception, e:
-			print "reload error: %s" % e
+			error = e
+		if error:
+			print "reload error: %s" % error
 
 _watcher = FileSystemWatcher()
 _watcher.Path = Directory.GetCurrentDirectory()
@@ -228,3 +268,8 @@ _watcher.EnableRaisingEvents = True
 
 if __name__ == "__main__":
 	map(login, config.logins)
+#	while True:
+#		msg = raw_input("> ")
+#		for client in _client_bound_events.keys():
+#			_chat_command._command(_chat_command, client, msg, "", "", "Agent", 
+#				config.owner, owner_id, client.Self.SimPosition)

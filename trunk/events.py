@@ -9,3 +9,8 @@ def OnRequestTeleport(client, msg, sim):
 	if msg.FromAgentName == config.owner:
 		client.Self.TeleportLureRespond(msg.FromAgentID, True)
 
+@bot.Event()
+def OnObjectOffered(*args):
+	"""accept any inventory offer"""
+	
+	return True
