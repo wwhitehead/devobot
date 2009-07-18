@@ -278,10 +278,4 @@ _watcher.EnableRaisingEvents = True
 
 
 if __name__ == "__main__":
-	for login_info in config.logins:
-		login(*login_info)
-	while True:
-		msg = raw_input("> ")
-		for client in clients():
-			command(client, msg)
-
+	import run
