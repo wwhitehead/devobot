@@ -1,9 +1,8 @@
 
 
 class Command:
-	"""
-	decorator for text command functions to flag them as commands 
-	and specify their access level
+	"""decorator for text command functions to flag them as commands and 
+	specify their access level
 	"""
 	
 	def __init__(self, public=False):
@@ -21,7 +20,9 @@ class Command:
 			return self._command(*args)
 
 
-class Event(Command): pass
+class Event(Command):
+	"""gives events a type that can be checked against"""
+	pass
 	
 	
 import clr
@@ -45,9 +46,9 @@ _sl_events = []
 
 
 def _reload():
-	"""
-	reloads event handlers, config settings and commands and applies to clients
-	called when a file is modified, a client logs in or a command is triggered
+	"""reloads event handlers, config settings and commands and applies to 
+	clients called when a file is modified, a client logs in or a command is 
+	triggered
 	"""
 	
 	# reload relevant modules
@@ -98,9 +99,8 @@ def _reload():
 
 @handlers.bot.Event()
 def _chat_command(client, msg, audible, type, source, name, id, owner, pos):
-	"""
-	create an InstantMesage-like object from chat events and 
-	pass it to the im handler
+	"""create an InstantMesage-like object from chat events and pass it to the 
+	im handler
 	"""
 	
 	class MessageWrapper:
@@ -187,15 +187,26 @@ def say(client, msg):
 	"""shortcut for sending messages out to chat"""
 	
 	client.Self.Chat(str(msg), 0, ChatType.Normal)
+	
 
+def clients():
+	"""helper that returns all clients"""
+	
+	return _client_bound_events.keys()
+
+
+def command(client, command):
+	"""external interface for running a command as the bot owner"""
+	
+	_chat_command._command(client, command, "", "", "Agent", config.owner, 
+		owner_id, owner_id, client.Self.SimPosition)
 
 class _Events:
 	"""wrapper class for all event handlers and waiting"""
 	
 	def handler(self, client, name):
-		"""
-		return a function tied to a client and event name that 
-		looks up the set handler for the event
+		"""return a function tied to a client and event name that looks up the 
+		set handler for the event
 		"""
 		
 		def named_handler(*args):
@@ -240,7 +251,7 @@ class _Events:
 events = _Events()
 
 
-# set up directoy watcher to automatically reload
+# set up directory watcher to automatically reload
 def _watcher_reload(source, event):
 	
 	if event.Name in ("commands.py", "config.py", "events.py"):
@@ -267,9 +278,10 @@ _watcher.EnableRaisingEvents = True
 
 
 if __name__ == "__main__":
-	map(login, config.logins)
-#	while True:
-#		msg = raw_input("> ")
-#		for client in _client_bound_events.keys():
-#			_chat_command._command(_chat_command, client, msg, "", "", "Agent", 
-#				config.owner, owner_id, client.Self.SimPosition)
+	for login_info in config.logins:
+		login(*login_info)
+	while True:
+		msg = raw_input("> ")
+		for client in clients():
+			command(client, msg)
+
