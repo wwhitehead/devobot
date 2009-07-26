@@ -60,17 +60,12 @@ def _reload():
 		client = _client_bound_events.keys()[0]
 		for name in dir(client):
 			obj = getattr(client, name)
-			try:
+			if not callable(obj):
 				for member in dir(obj):
-					try:
-						if "event" in str(type(getattr(obj, member))).lower():
-							event = "%s.%s" % (name, member)
-							if event not in _sl_events:
-								_sl_events.append(event)
-					except:
-						pass
-			except:
-				pass
+					if member.startswith("On"):
+						event = "%s.%s" % (name, member)
+						if event not in _sl_events:
+							_sl_events.append(event)
 	
 	# bind settings and sl event handlers
 	handlers.OnChat = None
@@ -136,7 +131,7 @@ def login(credentials, sim=None, timeout=30):
 
 	# handler required for bot's avatar to render when changing sims
 	client.Network.OnSimConnected += client.Network.SimConnectedCallback(
-		lambda *args: client.Appearance.SetPreviousAppearance(False))
+		lambda *args: client.Appearance.SetPreviousAppearance(True))
 		
 	# handler required for converting instant messages into Dialog events
 	client.Self.OnInstantMessage += client.Self.InstantMessageCallback(
