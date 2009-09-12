@@ -71,7 +71,8 @@ def _reload():
 	handlers.OnChat = None
 	for client, bound in _client_bound_events.items():
 		for setting in config.settings.items():
-			exec("client.%s = %s" % setting)
+			if setting[0] != "Settings.LOGIN_SERVER":
+				exec("client.%s = %s" % setting)
 		for event in _sl_events:
 			name = event.split(".")[-1]
 			if name in dir(handlers) and name not in bound:
@@ -128,6 +129,13 @@ def login(credentials, sim=None, timeout=30):
 	"""set up a client object and return it after logging in"""
 	
 	client = GridClient()
+	
+	# set login server
+	login_server = config.settings.get("Settings.LOGIN_SERVER", "AGNI")
+	if login_server.upper() in ("AGNI", "ADITI"):
+		login_server = getattr(client.Settings, "%s_LOGIN_SERVER" % 
+			login_server.upper())
+	client.Settings.LOGIN_SERVER = login_server
 
 	# handler required for bot's avatar to render when changing sims
 	client.Network.OnSimConnected += client.Network.SimConnectedCallback(

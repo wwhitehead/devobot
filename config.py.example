@@ -13,6 +13,7 @@ addr = ("DevoBot", "meat.carver@gmail.com")
 
 # libomv client settings
 settings = {
+	"Settings.LOGIN_SERVER": "AGNI",
 	"Settings.ALWAYS_REQUEST_OBJECTS": True, # for prim updates
 	"Settings.ALWAYS_DECODE_OBJECTS": True, # for follow
 	"Settings.SEND_AGENT_UPDATES": True, # ends movement
